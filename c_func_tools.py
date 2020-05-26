@@ -6,6 +6,7 @@ import time
 import re
 import os
 import readline
+import shutil
 
 def function_read_file(file_name):
     "读文件，并打印"
@@ -112,9 +113,7 @@ def function_count_all_function(filename):
     return func_count_number
 
 
-type_list_save = ["uint64_t","uint32_t","uint16_t","uint8_t",
-"int64_t","int32_t","int16_t","int8_t","u8","u16","u32",
-"void","int","bool","char","float","short","long","double"]
+type_list_save = C_type_list
 
 def function_search_all_type(filename):
     if filename.find(".c")==-1 and filename.find(".h")==-1 :
@@ -349,12 +348,31 @@ def function_save_type_in_file(file_name):
     type_list_str = '"'+'","'.join(type_list_save)+'"'
     type_list_file.write(type_list_str)
 
+def function_clean_file(file_name):
+    # 清理缓存文件
+    try :
+        os.remove('./type_list.txt') 
+        print ("Clean type_list.")
+    except:
+        if os.path.exists('./type_list.txt'):
+            print ("clean type_list.txt fail.")
+
+    try :
+        #递归的删除目录及文件
+        shutil.rmtree('./temp') 
+        print ("Clean temp.")
+    except:
+        if os.path.exists('./temp'):
+            print ("clean temp file fail.")
+    
+    print ("Clean success.")
+
 def main(argv):
     read_file = ''
     outputfile = ''
     
     try:
-        opts, args = getopt.getopt(argv, "hsr:f:l:t:c:a", ["countlines=","rfile="])
+        opts, args = getopt.getopt(argv, "hsr:f:l:t:c:a", ["countlines=","rfile=","clean"])
     except getopt.GetoptError:
         print ('error-' + Help_text)
         return
@@ -379,6 +397,8 @@ def main(argv):
             dir_exe_func = True        
         elif opt in ("-s", "--save_type_list"):
             execute_func = function_save_type_in_file
+        elif opt in ("--clean"):
+            execute_func = function_clean_file
 
         if opt not in ("-a", "--all_execu") and execute_func != None:
             if dir_exe_func == True:
