@@ -1,7 +1,7 @@
 # Python_Tools
 Python Tools create by myself.
 
-
+```
 c_func_tools.py 
     -r <read file> 
     -l <count lines> 
@@ -9,4 +9,6 @@ c_func_tools.py
     -t <get func type> 
     -c <create fake func> 
     -a <Directory recursive execution> 
-
+    --clean <Clean temp file>
+    
+```
