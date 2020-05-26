@@ -35,10 +35,13 @@ def function_count_file_line( parameters ):
 C_descriptor_list = ['const','volatile','extern','static', 'register','auto','*']
 C_special_descriptor_list = ['IRAM_ATTR','DRAM_ATTR','*']
 
-C_type_list =["uint64_t","uint32_t","uint16_t","uint8_t",
+C_type_list =["unsigned int","unsigned char",
+"uint64_t","uint32_t","uint16_t","uint8_t",
 "int64_t","int32_t","int16_t","int8_t","u8","u16","u32",
 "void","int","bool","char","float","short","long","double"
 ]
+
+split_str = '([ ()\n\s,=;])'
 
 MAX_func_name_len = 600
 
@@ -53,7 +56,7 @@ def function_count_all_function(filename):
     last_3_word = ['first','second','thrid']
     for line in fhand:
         line = line.rstrip()
-        words = last_3_word + re.split(r'([ ()\n\s])',line)           # 分割单词，以列表返回
+        words = last_3_word + re.split(split_str,line)           # 分割单词，以列表返回
         last_3_word = words[-3:]
         func_define = ""
         while ' ' in words:
@@ -78,7 +81,7 @@ def function_count_all_function(filename):
                 if i + temp_next_brackets >= len(words):
                     continue
                 func_name = words[ i + temp_next_brackets - 1 ]
-                if func_name.find("[")!=-1 or func_name.find("(")!=-1 or func_name.find(")")!=-1:
+                if func_name.find("[")!=-1 or func_name.find("(")!=-1 or func_name.find(")")!=-1 or func_name.find("=")!=-1:
                     # print("Find error name"+ func_name)
                     # print(words)
                     break
@@ -99,7 +102,7 @@ def function_count_all_function(filename):
                         if i >= len(words):
                             line = fhand.readline()
                             line = line.rstrip()
-                            line = re.split(r'([ ()\n\s])',line)
+                            line = re.split(split_str,line)
                             words =  line
                             i = 0
                             # print(words)
@@ -127,7 +130,7 @@ def function_search_all_type(filename):
     
     for line in fhand:
         line = line.rstrip()
-        words = re.split(r'([ ()\n\s])',line)           # 分割单词，以列表返回
+        words = re.split(split_str,line)           # 分割单词，以列表返回
        
         while ' ' in words:
             words.remove(' ')
@@ -142,7 +145,7 @@ def function_search_all_type(filename):
                     while words[i].find('/') != -1:
                         words[i] = words[i].replace('/',"")
                     print('"'+ words[i] +'",')
-                    type_list_save.append(words[i])
+                    type_list_save.insert(0,words[i])
             
 
     fhand.close()# 
@@ -159,7 +162,7 @@ def function_package_debug_functions(func_type,func_name,func_param):
 
 
     if(param_in.find("struct")!=-1):
-        param_in = re.split(r'([ ()\n\s])',param_in)
+        param_in = re.split(split_str,param_in)
         print(param_in)
         while ' ' in param_in:
             param_in.remove(' ')
@@ -207,15 +210,24 @@ def function_Refactor_all_functions(filename):
     (file_dir, file_name) = os.path.split(fhand.name)
     print (file_dir)
     print (file_name)
-    if file_name.find(".c")==-1 :
-        print(file_name+" is not a .c file")
-        return
-    
+
     new_file_dir = './temp/'+file_dir+'/'
     if not os.path.exists(new_file_dir):
         os.makedirs(new_file_dir)
     new_file_location = new_file_dir + file_name
 
+    if file_name.find(".c")==-1 :
+        print(file_name+" is not a .c file")
+        # adding exception handling
+        try:
+            shutil.copy(filename, new_file_location)
+        except IOError as e:
+            print("Unable to copy file. %s" % e)
+        except:
+            print("Unexpected error:", sys.exc_info())
+
+        return
+    
     write_file = open(new_file_location, 'w')
     write_file_header = open(new_file_dir+'fake_'+file_name[0:-2]+'_header.h', 'w')
     write_file_header.write("#ifndef __"+file_name[0:-2].upper()+"_H__\n#define __"+file_name[0:-2].upper()+"_H__\n\n")
@@ -229,7 +241,7 @@ def function_Refactor_all_functions(filename):
     for line in fhand:
         orig_line = line
         line = line.rstrip()
-        words = last_3_word + re.split(r'([ ()\n\s])',line)           # 分割单词，以列表返回
+        words = last_3_word + re.split(split_str,line)           # 分割单词，以列表返回
         last_3_word = words[-3:]
         func_define = ""
 
@@ -288,7 +300,7 @@ def function_Refactor_all_functions(filename):
                                 # write_file.write(line.replace("{",function_package_debug_functions(func_type,func_name,func_param)))
                                 orig_line = line
                             line = line.rstrip()
-                            line = re.split(r'([ ()\n\s])',line)
+                            line = re.split(split_str,line)
                             words = line
                             i = 0
                             # print(words)
