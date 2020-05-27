@@ -306,8 +306,29 @@ def function_Refactor_all_functions(filename):
                 if words[ i + temp_next_brackets ] =='(':
                     # i = i + temp_next_brackets
                     while words[i]!='{' :
+                        find_func_param_finish = (func_param != "" and is_Bracket_matching(func_param) == True)
+                        # 如果函数参数已经获取完成，但是下一个元素不是{ 而且不是注释
+                        if find_func_param_finish == True:
+                            print("finish:"+func_param)
+                        if find_func_param_finish == True :
+                            if words[i].find('//')!=-1: #如果这是注释
+                                while i<len(words)-2: # 如果没有遇到*/
+                                    i = i+1
+                                continue
+                            if words[i].find('/')!=-1 and words[i+1].find('*')!=-1: #如果这是注释
+                                print("find /*")
+                                i=i+2
+                                while i<len(words) : # 如果没有遇到*/
+                                    print("#"+ words[i])
+                                    i = i+1
+                                    if words[i].find('*')==-1:
+                                        break
+                            else :
+                                print(words[i:])
+                                print ("Error : 可能是注释，跳过")
+                                break
                         # 如果找到第一个 ‘(’ 将其写入 func_param, 如果写入过 '(' 则判断括号匹配
-                        if words[i].find("(") != -1 or (func_param != "" and is_Bracket_matching(func_param)==False):
+                        if words[i].find("(") != -1 or func_param != ""and is_Bracket_matching(func_param)==False:
                             func_param = func_param + words[i] + " "
                             # print(words[i])
                             # print(func_param)
@@ -330,15 +351,20 @@ def function_Refactor_all_functions(filename):
                             line = line.rstrip()
                             line = re.split(split_str,line)
                             words = line
+                            while ' ' in words:
+                                words.remove(' ')
+                            while '' in words:
+                                words.remove('')
                             i = 0
                             # print(words)
-                        
-                    write_file.write(orig_line.replace("{",function_package_debug_functions(func_type,func_special_des,func_name,func_param)))
-                    orig_line = ""
+                    # while end
+                    if words[i] == '{':
+                        write_file.write(orig_line.replace("{",function_package_debug_functions(func_type,func_special_des,func_name,func_param)))
+                        orig_line = ""
 
-                    print(func_define)
-                    # print("name:"+func_name)
-                    write_file_header.write(func_type+" "+func_name+"_fake"+" "+func_param+";\n")
+                        print(func_define)
+                        # print("name:"+func_name)
+                        write_file_header.write(func_type+" "+func_name+"_fake"+" "+func_param+";\n")
                     
                     # write_file.write('\n'+func_define+'\n')
                     break
