@@ -330,8 +330,10 @@ Help_text ="c_func_tools.py \n\
     -l <count lines> \n\
     -f <count function num> \n\
     -t <get func type> \n\
+    -s <save known func type to ./type_list.txt> \n\
     -c <create fake func> \n\
     -a <Directory recursive execution> \n\
+    --clean <Clean temp file> \n\
 "
 
 def function_execute_for_all_file_in_dir(exe_function,exe_dir):

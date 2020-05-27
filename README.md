@@ -7,6 +7,7 @@ c_func_tools.py
     -l <count lines> 
     -f <count function num> 
     -t <get func type> 
+    -s <save known func type to ./type_list.txt> 
     -c <create fake func> 
     -a <Directory recursive execution> 
     --clean <Clean temp file>
