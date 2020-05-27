@@ -41,7 +41,7 @@ C_type_list =["unsigned int","unsigned char",
 "void","int","bool","char","float","short","long","double"
 ]
 
-split_str = '([ ()\n\s,=;*])'
+split_str = '([{ ()\n\s,=;*}])'
 
 def is_Bracket_matching(s):
     l = ['{','}','[',']','(',')']
@@ -176,7 +176,7 @@ def function_package_debug_functions(func_type,func_special_des,func_name,func_p
 
     if(param_in.find("struct")!=-1):
         param_in = re.split(split_str,param_in)
-        print(param_in)
+        # print(param_in)
         while ' ' in param_in:
             param_in.remove(' ')
         while '' in param_in:
@@ -184,7 +184,7 @@ def function_package_debug_functions(func_type,func_special_des,func_name,func_p
         while 'struct' in param_in:
             param_in.remove(param_in[param_in.index('struct')+1])
             param_in.remove(param_in[param_in.index('struct')])
-            print(param_in)
+            # print(param_in)
         
         param_in = " ".join(param_in)
         # print(param_in.find("struct"))
@@ -219,6 +219,34 @@ def function_package_debug_functions(func_type,func_special_des,func_name,func_p
 
     print("param:" + func_param)
     return func_str
+
+def function_line_is_vaild(line):
+    vaild_element = [""," ","\t","\n","\r",'/']
+    for element in list(line):
+        if element not in vaild_element:
+            return True
+        if element == '/':
+            print("ele:"+element)
+            return False
+    return False
+
+# def function_line_is_comment(line):
+#     global last_two_element =["",""]
+#     global is_in_comment = False
+#     list_of_line = list(line)
+
+#     for i in range(0,len(list_of_line)):
+#         if len(list_of_line) > 2 :
+#             if list_of_line[i] =='/' and list_of_line[i+1] =='/':
+#                 return True
+
+#         if last_two_element[0] == '/' and last_two_element[0] == '*':
+#             is_in_comment = True
+#             return True
+#         if last_two_element[0] == '*' and last_two_element[0] == '/':
+#             is_in_comment = False
+#             return True
+#     return False
 
 def function_Refactor_all_functions(filename):
     "重构所有函数"
@@ -310,40 +338,38 @@ def function_Refactor_all_functions(filename):
                         # 如果函数参数已经获取完成，但是下一个元素不是{ 而且不是注释
                         if find_func_param_finish == True:
                             print("finish:"+func_param)
-                        if find_func_param_finish == True :
-                            if words[i].find('//')!=-1: #如果这是注释
-                                while i<len(words)-2: # 如果没有遇到*/
-                                    i = i+1
-                                continue
-                            if words[i].find('/')!=-1 and words[i+1].find('*')!=-1: #如果这是注释
-                                print("find /*")
-                                i=i+2
-                                while i<len(words) : # 如果没有遇到*/
-                                    print("#"+ words[i])
-                                    i = i+1
-                                    if words[i].find('*')==-1:
-                                        break
-                            else :
-                                print(words[i:])
-                                print ("Error : 可能是注释，跳过")
-                                break
                         # 如果找到第一个 ‘(’ 将其写入 func_param, 如果写入过 '(' 则判断括号匹配
-                        if words[i].find("(") != -1 or func_param != ""and is_Bracket_matching(func_param)==False:
+                        if (words[i].find("(") != -1 and func_param == "") or (func_param != "" and is_Bracket_matching(func_param)==False):
                             func_param = func_param + words[i] + " "
                             # print(words[i])
                             # print(func_param)
 
                         if words[i] == ';' or words[i] == '}':
                             break
-                        if words[i] != '\n' and  words[i] != ' ' :
+                        if words[i] != '\n' and  words[i] != ' ':
                             # print("["+words[i])
                             func_define += words[i] + ' '  
                         i=i+1                        
                         if i >= len(words):
                             line = fhand.readline()
+                            
                             if orig_line != "":
                                 write_file.write(orig_line)
                                 orig_line = ""
+
+                            print(line)
+                            if function_line_is_vaild(line) == False :
+                                # print (line)
+                                while function_line_is_vaild(line) == False:
+                                    write_file.write(line)
+                                    orig_line = ""
+                                    line = fhand.readline()
+                                    if not line :
+                                        print ("line end:")
+                                        break
+
+                                print ("vaild_line:" + line)
+                                
                             if line.find("{")==-1:
                                 write_file.write(line)
                             else : #如果存在{
@@ -353,9 +379,13 @@ def function_Refactor_all_functions(filename):
                             words = line
                             while ' ' in words:
                                 words.remove(' ')
+                            while '\t' in words:
+                                words.remove('\t')
                             while '' in words:
                                 words.remove('')
+                            print(words)
                             i = 0
+                            
                             # print(words)
                     # while end
                     if words[i] == '{':
