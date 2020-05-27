@@ -33,7 +33,7 @@ def function_count_file_line( parameters ):
 
 
 C_descriptor_list = ['const','volatile','extern','static', 'register','auto','*']
-C_special_descriptor_list = ['IRAM_ATTR','DRAM_ATTR','*']
+C_special_descriptor_list = ['const','IRAM_ATTR','DRAM_ATTR','*']
 
 C_type_list =["unsigned int","unsigned char",
 "uint64_t","uint32_t","uint16_t","uint8_t",
@@ -41,7 +41,7 @@ C_type_list =["unsigned int","unsigned char",
 "void","int","bool","char","float","short","long","double"
 ]
 
-split_str = '([ ()\n\s,=;])'
+split_str = '([ ()\n\s,=;*])'
 
 MAX_func_name_len = 600
 
@@ -73,8 +73,8 @@ def function_count_all_function(filename):
 
             if words[i] in C_type_list :
                 temp_next_brackets = 2
-                for special_desc in C_special_descriptor_list:
-                    if special_desc in words[ i:i + 2 ]:
+                for word in words[ i:i + 3 ] :
+                    if word in C_special_descriptor_list:
                         temp_next_brackets = temp_next_brackets + 1
                         # print (words)
                         # print (temp_next_brackets)
@@ -89,12 +89,9 @@ def function_count_all_function(filename):
                     define_count = 0
                     while words[i]!='{' and define_count < MAX_func_name_len:
                         define_count = define_count + 1
-                        if words[i] == ';':
+                        if words[i] == ';'or words[i] == '}':
                             break
-                        if words[i-1] == ')' or words[i] == '}':
-                            # print ("some may error\n"+ "".join(line) )
-                            # print (words)
-                            break
+
                         if words[i] != '\n' and  words[i] != ' ' :
                             # print("["+words[i])
                             func_define += words[i] + ' '  
@@ -151,7 +148,7 @@ def function_search_all_type(filename):
     fhand.close()# 
 
 
-def function_package_debug_functions(func_type,func_name,func_param):
+def function_package_debug_functions(func_type,func_special_des,func_name,func_param):
     param_in = func_param
     for C_type in C_type_list:
         if(param_in.find(C_type)!=-1):
@@ -181,19 +178,25 @@ def function_package_debug_functions(func_type,func_name,func_param):
 
     func_str="{\n\t"
 
-    if(func_type!="void"):
-        func_str = func_str + func_type + " return_value;\n\t"
+    Flag_is_void_type = (func_type=="void") 
+    Flag_is_point_type = "*" in func_special_des
+    
+    if Flag_is_point_type == True :
+        Flag_is_void_type = False
+
+    if Flag_is_point_type == True:
+        func_str = func_str + func_type + " *" + " return_value;\n\t"
     
     func_str = func_str + "gyc_dbg_trace_start((void *)"+func_name+",NULL);\n"
 
-    if(func_type!="void"):
+    if Flag_is_void_type == False:
         func_str = func_str + "\treturn_value = "
     func_str = func_str + "\t"+func_name+"_fake"+param_in+";\n"+\
     "\tgyc_dbg_trace_end((void *)"+func_name+",NULL);\n"
-    if(func_type!="void"):
+    if Flag_is_void_type == False:
         func_str = func_str + "\treturn return_value; \n"
     func_str = func_str + "}\n\n"+\
-    func_type+" "+func_name+"_fake"+func_param+\
+    func_type+ " " +" ".join(func_special_des) + " "+func_name+"_fake"+func_param+\
     "\n{\n"
 
     return func_str
@@ -257,15 +260,19 @@ def function_Refactor_all_functions(filename):
                 has_add_debug_info = True
                 write_file.write('#include '+'"fake_'+file_name[0:-2]+'_header.h"'+' \nvoid gyc_dbg_trace_start(const void * func_addr,char* data); \nvoid gyc_dbg_trace_end(const void * func_addr,char* data);\n\n')
 
-            if i>0 and (words[i-1] in C_descriptor_list or words[i-1].replace("*","") in C_descriptor_list) :
+            if i>0 and (words[i-1] in C_descriptor_list) :
                 func_define = words[i-1] +" "
 
-            if words[i] in C_type_list or words[i].replace("*","") in C_type_list :
+            if words[i] in C_type_list :
                 temp_next_brackets = 2
                 func_type = words[i]
                 func_param = ""
-                for special_desc in C_special_descriptor_list:
-                    if special_desc in words[ i:i + 2 ]:
+                func_special_des = []
+                for word in words[ i:i + 3 ] :
+                    if word in C_special_descriptor_list:
+                        print(words[ i:i + 3 ])
+                        print(word)
+                        func_special_des.append(word)
                         temp_next_brackets = temp_next_brackets + 1
                 # 如果读取的文件不完整（有其他内容在下一行），则下次再处理
                 if i + temp_next_brackets >= len(words):
@@ -297,7 +304,6 @@ def function_Refactor_all_functions(filename):
                             if line.find("{")==-1:
                                 write_file.write(line)
                             else : #如果存在{
-                                # write_file.write(line.replace("{",function_package_debug_functions(func_type,func_name,func_param)))
                                 orig_line = line
                             line = line.rstrip()
                             line = re.split(split_str,line)
@@ -305,7 +311,7 @@ def function_Refactor_all_functions(filename):
                             i = 0
                             # print(words)
                         
-                    write_file.write(orig_line.replace("{",function_package_debug_functions(func_type,func_name,func_param)))
+                    write_file.write(orig_line.replace("{",function_package_debug_functions(func_type,func_special_des,func_name,func_param)))
                     orig_line = ""
 
                     print(func_define)
