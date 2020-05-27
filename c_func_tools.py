@@ -8,6 +8,9 @@ import os
 import readline
 import shutil
 
+
+start_time = 0
+
 def function_read_file(file_name):
     "读文件，并打印"
     print("Read File:")
@@ -59,7 +62,13 @@ def is_Bracket_matching(s):
 
 MAX_func_name_len = 600
 
+total_func_number = 0
 def function_count_all_function(filename):
+    global total_func_number
+    if filename.find(".c")==-1 and filename.find(".h")==-1 :
+        print(filename+" is not target file.")
+        return
+
     func_count_number = 0
     try:
         fhand = open (filename)
@@ -126,6 +135,8 @@ def function_count_all_function(filename):
 
     fhand.close()
     print("\n"+filename+" have "+str(func_count_number) +" functions.")
+    total_func_number = total_func_number + func_count_number
+    print ("total_func_number:"+str(total_func_number))
     return func_count_number
 
 
@@ -412,6 +423,144 @@ def function_Refactor_all_functions(filename):
     print ("总计已重构"+str(Refactor_func_count)+"个函数")
     return Refactor_func_count
 
+
+def function_count_all_functions(filename):
+    "统计所有函数（新）"
+    global Refactor_func_count
+    find_func_count = 0
+    try:
+        fhand = open (filename)
+    except:
+        print ('打开文件出错:', filename)
+        exit ()
+    
+    (file_dir, file_name) = os.path.split(fhand.name)
+    print (file_dir)
+    print (file_name)
+
+    if file_name.find(".c")==-1 :
+        print(file_name+" is not a .c file")
+        # adding exception handling
+        return
+
+    # 保存之前至少 3 个元素，防止因换行漏判
+    last_3_word = ['ab','bb','cb']
+
+    Temp_head_list = C_descriptor_list + C_type_list +["#define"]
+    Temp_head_list.remove("*")
+    for line in fhand:
+        orig_line = line
+        line = line.rstrip()
+        words = last_3_word + re.split(split_str,line)           # 分割单词，以列表返回
+        last_3_word = words[-3:]
+        func_define = ""
+
+        # 去除掉无用的 空格 和 空的元素，防止干扰
+        while ' ' in words:
+            words.remove(' ')
+        while '' in words:
+            words.remove('')
+        
+        for i in range(0,len(words)-2):
+
+            if i>0 and (words[i-1] in C_descriptor_list) :
+                func_define = words[i-1] +" "
+            else :
+                func_define = ""
+
+            if words[i] in C_type_list :
+                temp_next_brackets = 2
+                func_type = words[i]
+                func_param = ""
+                func_special_des = []
+                for word in words[ i:i + 3 ] :
+                    if word in C_special_descriptor_list:
+                        # print(words[ i:i + 3 ])
+                        # print(word)
+                        func_special_des.append(word)
+                        temp_next_brackets = temp_next_brackets + 1
+                # 如果读取的文件不完整（有其他内容在下一行），则下次再处理
+                if i + temp_next_brackets >= len(words):
+                    continue
+                func_name = words[ i + temp_next_brackets -1]
+                if func_name.find("[")!=-1 or func_name.find("(")!=-1 or func_name.find(")")!=-1:
+                    # print("Find error name"+ func_name)
+                    # print(words)
+                    break
+                if words[ i + temp_next_brackets ] =='(':
+                    # i = i + temp_next_brackets
+                    while words[i]!='{' :
+                        find_func_param_finish = (func_param != "" and is_Bracket_matching(func_param) == True)
+                        # 如果函数参数已经获取完成
+                        if find_func_param_finish == True:
+                            if i < len(words) and words[i] != '{':
+                                print("finish:"+func_param)
+                        # 如果找到第一个 ‘(’ 将其写入 func_param, 如果写入过 '(' 则判断括号匹配
+                        if (words[i].find("(") != -1 and func_param == "") or (func_param != "" and is_Bracket_matching(func_param)==False):
+                            func_param = func_param + words[i] + " "
+                            # print(words[i])
+                            # print(func_param)
+
+                        if words[i] == ';' or words[i] == '}':
+                            break
+                        if words[i] != '\n' and  words[i] != ' ':
+                            # print("["+words[i])
+                            func_define += words[i] + ' '  
+                        i=i+1                        
+                        if i >= len(words):
+                            line = fhand.readline()
+                            
+                            if orig_line != "":
+                                orig_line = ""
+
+                            # print(line)
+                            if function_line_is_vaild(line) == False :
+                                # print (line)
+                                while function_line_is_vaild(line) == False:
+                   
+                                    orig_line = ""
+                                    line = fhand.readline()
+                                    if not line :
+                                        print ("line end:")
+                                        break
+                                # print ("vaild_line:" + line)
+                                
+                            if line.find("{")!=-1:
+                                orig_line = line
+                            line = line.rstrip()
+                            line = re.split(split_str,line)
+                            words = line
+                            while ' ' in words:
+                                words.remove(' ')
+                            while '\t' in words:
+                                words.remove('\t')
+                            while '' in words:
+                                words.remove('')
+                            # print(words)
+                            i = 0
+
+                    # while end
+                    if words[i] == '{':
+                        orig_line = ""
+                        Refactor_func_count = Refactor_func_count + 1
+                        find_func_count = find_func_count + 1
+                        print(func_define)
+                        # print("name:"+func_name)
+                    
+                    # write_file.write('\n'+func_define+'\n')
+                    break
+                
+
+
+    fhand.close()# 
+    global start_time 
+    localtime = time.asctime( time.localtime(time.time()) )
+    print("===\n"+ filename + " func_num " + str(find_func_count) +"\n=====================================  " 
+    + localtime +" 已用时："+time.asctime( time.gmtime(time.time() - start_time))+'\n')
+
+    print ("总计"+str(Refactor_func_count)+"个函数")
+    return Refactor_func_count
+
 Help_text ="c_func_tools.py \n\
     -r <read file> \n\
     -l <count lines> \n\
@@ -424,8 +573,9 @@ Help_text ="c_func_tools.py \n\
 "
 
 def function_execute_for_all_file_in_dir(exe_function,exe_dir):
-
-    localtime = time.asctime( time.localtime(time.time()) )
+    global start_time 
+    start_time = time.time()
+    localtime = time.asctime( time.localtime(start_time) )
     print ("启动时间为 :", localtime)
 
     g = os.walk(exe_dir)  
@@ -437,6 +587,7 @@ def function_execute_for_all_file_in_dir(exe_function,exe_dir):
 
     localtime = time.asctime( time.localtime(time.time()) )
     print ("结束时间为 :", localtime)
+    print ("总耗时："+time.asctime( time.gmtime(time.time() - start_time))+'\n')
 
 
 def function_save_type_in_file(file_name):
@@ -489,7 +640,7 @@ def main(argv):
         elif opt in ("-l", "--countlines"):
             execute_func = function_count_file_line
         elif opt in ("-f", "--funcname"):
-            execute_func = function_count_all_function
+            execute_func = function_count_all_functions
         elif opt in ("-t", "--type_get"):
             execute_func = function_search_all_type
         elif opt in ("-c", "--create_file"):
