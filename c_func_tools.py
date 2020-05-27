@@ -217,7 +217,7 @@ def function_package_debug_functions(func_type,func_special_des,func_name,func_p
     func_type+ " " +" ".join(func_special_des) + " "+func_name+"_fake"+func_param+\
     "\n{\n"
 
-    print("param:" + func_param)
+    # print("param:" + func_param)
     return func_str
 
 def function_line_is_vaild(line):
@@ -226,7 +226,7 @@ def function_line_is_vaild(line):
         if element not in vaild_element:
             return True
         if element == '/':
-            print("ele:"+element)
+            # print("ele:"+element)
             return False
     return False
 
@@ -248,9 +248,10 @@ def function_line_is_vaild(line):
 #             return True
 #     return False
 
+Refactor_func_count = 0
 def function_Refactor_all_functions(filename):
     "重构所有函数"
-
+    global Refactor_func_count
     try:
         fhand = open (filename)
     except:
@@ -335,9 +336,10 @@ def function_Refactor_all_functions(filename):
                     # i = i + temp_next_brackets
                     while words[i]!='{' :
                         find_func_param_finish = (func_param != "" and is_Bracket_matching(func_param) == True)
-                        # 如果函数参数已经获取完成，但是下一个元素不是{ 而且不是注释
+                        # 如果函数参数已经获取完成
                         if find_func_param_finish == True:
-                            print("finish:"+func_param)
+                            if i < len(words) and words[i] != '{':
+                                print("finish:"+func_param)
                         # 如果找到第一个 ‘(’ 将其写入 func_param, 如果写入过 '(' 则判断括号匹配
                         if (words[i].find("(") != -1 and func_param == "") or (func_param != "" and is_Bracket_matching(func_param)==False):
                             func_param = func_param + words[i] + " "
@@ -357,7 +359,7 @@ def function_Refactor_all_functions(filename):
                                 write_file.write(orig_line)
                                 orig_line = ""
 
-                            print(line)
+                            # print(line)
                             if function_line_is_vaild(line) == False :
                                 # print (line)
                                 while function_line_is_vaild(line) == False:
@@ -367,8 +369,7 @@ def function_Refactor_all_functions(filename):
                                     if not line :
                                         print ("line end:")
                                         break
-
-                                print ("vaild_line:" + line)
+                                # print ("vaild_line:" + line)
                                 
                             if line.find("{")==-1:
                                 write_file.write(line)
@@ -383,15 +384,14 @@ def function_Refactor_all_functions(filename):
                                 words.remove('\t')
                             while '' in words:
                                 words.remove('')
-                            print(words)
-                            i = 0
-                            
                             # print(words)
+                            i = 0
+
                     # while end
                     if words[i] == '{':
                         write_file.write(orig_line.replace("{",function_package_debug_functions(func_type,func_special_des,func_name,func_param)))
                         orig_line = ""
-
+                        Refactor_func_count = Refactor_func_count +1
                         print(func_define)
                         # print("name:"+func_name)
                         write_file_header.write(func_type+" "+func_name+"_fake"+" "+func_param+";\n")
@@ -408,6 +408,9 @@ def function_Refactor_all_functions(filename):
     fhand.close()# 
     write_file.close()
     write_file_header.close()
+
+    print ("总计已重构"+str(Refactor_func_count)+"个函数")
+    return Refactor_func_count
 
 Help_text ="c_func_tools.py \n\
     -r <read file> \n\
