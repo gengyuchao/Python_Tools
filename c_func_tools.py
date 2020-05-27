@@ -43,6 +43,20 @@ C_type_list =["unsigned int","unsigned char",
 
 split_str = '([ ()\n\s,=;*])'
 
+def is_Bracket_matching(s):
+    l = ['{','}','[',']','(',')']
+    res = []
+    for i in s:
+        if i in l:
+            res.append(i)
+    resStr  = ''.join(res)
+    while '()' in resStr or '{}' in resStr or '[]' in resStr:
+        resStr = resStr.replace('()','').replace('{}','').replace('[]','')
+    if resStr == '':
+        return True
+    return False
+
+
 MAX_func_name_len = 600
 
 def function_count_all_function(filename):
@@ -68,6 +82,8 @@ def function_count_all_function(filename):
 
             if i>0 and words[i-1] in C_descriptor_list :
                 func_define = words[i-1] +" "
+            else :
+                func_define = ""
                 # print(line)
                 # print("is 0" + words[i-1] + "1" + words[i] + "2" + words[i+1] + "3" + words[i+2])
 
@@ -186,6 +202,8 @@ def function_package_debug_functions(func_type,func_special_des,func_name,func_p
 
     if Flag_is_point_type == True:
         func_str = func_str + func_type + " *" + " return_value;\n\t"
+    elif Flag_is_void_type == False:
+        func_str = func_str + func_type + " return_value;\n\t"
     
     func_str = func_str + "gyc_dbg_trace_start((void *)"+func_name+",NULL);\n"
 
@@ -199,6 +217,7 @@ def function_package_debug_functions(func_type,func_special_des,func_name,func_p
     func_type+ " " +" ".join(func_special_des) + " "+func_name+"_fake"+func_param+\
     "\n{\n"
 
+    print("param:" + func_param)
     return func_str
 
 def function_Refactor_all_functions(filename):
@@ -262,6 +281,8 @@ def function_Refactor_all_functions(filename):
 
             if i>0 and (words[i-1] in C_descriptor_list) :
                 func_define = words[i-1] +" "
+            else :
+                func_define = ""
 
             if words[i] in C_type_list :
                 temp_next_brackets = 2
@@ -270,8 +291,8 @@ def function_Refactor_all_functions(filename):
                 func_special_des = []
                 for word in words[ i:i + 3 ] :
                     if word in C_special_descriptor_list:
-                        print(words[ i:i + 3 ])
-                        print(word)
+                        # print(words[ i:i + 3 ])
+                        # print(word)
                         func_special_des.append(word)
                         temp_next_brackets = temp_next_brackets + 1
                 # 如果读取的文件不完整（有其他内容在下一行），则下次再处理
@@ -285,7 +306,8 @@ def function_Refactor_all_functions(filename):
                 if words[ i + temp_next_brackets ] =='(':
                     # i = i + temp_next_brackets
                     while words[i]!='{' :
-                        if words[i].find("(") != -1 or (func_param != "" and func_param[0]=="(" and func_param.find(")")==-1):
+                        # 如果找到第一个 ‘(’ 将其写入 func_param, 如果写入过 '(' 则判断括号匹配
+                        if words[i].find("(") != -1 or (func_param != "" and is_Bracket_matching(func_param)==False):
                             func_param = func_param + words[i] + " "
                             # print(words[i])
                             # print(func_param)
