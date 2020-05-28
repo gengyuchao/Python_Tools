@@ -162,7 +162,7 @@ def function_search_all_type(filename):
         while '' in words:
             words.remove('')
 
-        for i in range(0,len(words)-2):
+        for i in range(0,len(words)):
             if words[i].endswith("_t")==True or words[i].endswith("_t*")==True :
                 if words[i] not in type_list_save:
                     while words[i].find('"') != -1:
@@ -308,8 +308,6 @@ def function_Refactor_all_functions(filename):
         orig_line = line
         line = line.rstrip()
         words = last_3_word + re.split(split_str,line)           # 分割单词，以列表返回
-        last_3_word = words[-3:]
-        func_define = ""
 
         # 去除掉无用的 空格 和 空的元素，防止干扰
         while ' ' in words:
@@ -317,9 +315,16 @@ def function_Refactor_all_functions(filename):
         while '' in words:
             words.remove('')
         
+        # 最后三个字符必须是有效字符
+        last_3_word = words[-3:]
+        func_define = ""
+
         for i in range(0,len(words)):
 
-
+            if i >= len(words):
+                # print ("Error:Unexpected out of range."+str(i))
+                # print (words)
+                break
             # 跳过注释
             if words[i] =='*':
                 if  i-1>0 and words[i-1] =='/':
@@ -368,17 +373,27 @@ def function_Refactor_all_functions(filename):
                         if find_func_param_finish == True:
                             if i < len(words) and words[i] != '{':
                                 print("finish:"+func_param)
+
+                        if (func_param.find("(")==-1 or (func_param != "" and is_Bracket_matching(func_param)== False)):
+                            # print("["+words[i])
+                            func_define += words[i] + ' ' 
+
                         # 如果找到第一个 ‘(’ 将其写入 func_param, 如果写入过 '(' 则判断括号匹配
                         if (words[i].find("(") != -1 and func_param == "") or (func_param != "" and is_Bracket_matching(func_param)==False):
                             func_param = func_param + words[i] + " "
                             # print(words[i])
                             # print(func_param)
 
-                        if words[i] == ';' or words[i] == '}':
+                        if words[i] == ';':
+                            # 这是一个声明
+                            print("这是一个声明"+ func_name + func_param)
+                            # find_func_param_finish = False
+                            # func_param = ""
                             break
-                        if words[i] != '\n' and  words[i] != ' ':
-                            # print("["+words[i])
-                            func_define += words[i] + ' '  
+
+                        if words[i] == '}':
+                            break
+  
                         i=i+1                        
                         if i >= len(words):
                             line = fhand.readline()
@@ -405,13 +420,15 @@ def function_Refactor_all_functions(filename):
                                 orig_line = line
                             line = line.rstrip()
                             line = re.split(split_str,line)
-                            words = line
+                            words = last_3_word + line
                             while ' ' in words:
                                 words.remove(' ')
                             while '\t' in words:
                                 words.remove('\t')
                             while '' in words:
                                 words.remove('')
+
+                            last_3_word = words[-3:]
                             # print(words)
                             i = 0
 
@@ -425,7 +442,7 @@ def function_Refactor_all_functions(filename):
                         write_file_header.write(func_type+" "+func_name+"_fake"+" "+func_param+";\n")
                     
                     # write_file.write('\n'+func_define+'\n')
-                    break
+                    #break
                 
         if orig_line != "" :
             write_file.write(orig_line)
@@ -441,9 +458,11 @@ def function_Refactor_all_functions(filename):
     return Refactor_func_count
 
 
+Find_All_func_count = 0
+
 def function_count_all_functions(filename):
     "统计所有函数（新）"
-    global Refactor_func_count
+    global Find_All_func_count
     func_start_time = datetime.datetime.now()
     find_func_count = 0
     try:
@@ -471,8 +490,6 @@ def function_count_all_functions(filename):
         orig_line = line
         line = line.rstrip()
         words = last_3_word + re.split(split_str,line)           # 分割单词，以列表返回
-        last_3_word = words[-3:]
-        func_define = ""
 
         # 去除掉无用的 空格 和 空的元素，防止干扰
         while ' ' in words:
@@ -480,7 +497,16 @@ def function_count_all_functions(filename):
         while '' in words:
             words.remove('')
 
+        # 最后三个字符必须是有效字符
+        last_3_word = words[-3:]
+        func_define = ""
+
         for i in range(0,len(words)):
+
+            if i >= len(words):
+                # print ("Error:Unexpected out of range."+str(i))
+                # print (words)
+                break
 
             # 跳过注释
             if words[i] =='*':
@@ -531,23 +557,32 @@ def function_count_all_functions(filename):
                 if words[ i + temp_next_brackets ] =='(':
                     # i = i + temp_next_brackets
                     while words[i]!='{' :
-                        find_func_param_finish = (func_param != "" and is_Bracket_matching(func_param) == True)
-                        # 如果函数参数已经获取完成
-                        if find_func_param_finish == True:
-                            if i < len(words) and words[i] != '{':
-                                print("finish:"+func_param)
-                        # print("!"+words[i])
+                        # find_func_param_finish = (func_param != "" and is_Bracket_matching(func_param) == True)
+                        # # 如果函数参数已经获取完成
+                        # if find_func_param_finish == True:
+                        #     if i < len(words) and words[i] != '{':
+                        #         print("finish:"+func_param)
+
+
+                        if (func_param.find("(")==-1 or (func_param != "" and is_Bracket_matching(func_param)== False)):
+                            # print("["+words[i])
+                            func_define += words[i] + ' ' 
+
                         # 如果找到第一个 ‘(’ 将其写入 func_param, 如果写入过 '(' 则判断括号匹配
                         if (words[i].find("(") != -1 and func_param == "") or (func_param != "" and is_Bracket_matching(func_param)==False):
                             func_param = func_param + words[i] + " "
                             # print(words[i])
                             # print(func_param)
 
-                        if words[i] == ';' or words[i] == '}':
+                        if words[i] == ';':
+                            # 这是一个声明
+                            print("这是一个声明"+ func_name + func_param)
+                            # find_func_param_finish = False
+                            # func_param = ""
                             break
-                        if words[i] != '\n' and  words[i] != ' ':
-                            # print("["+words[i])
-                            func_define += words[i] + ' '  
+                        if words[i] == '}':
+                            break
+ 
                         i=i+1                        
                         if i >= len(words):
                             line = fhand.readline()
@@ -571,26 +606,28 @@ def function_count_all_functions(filename):
                                 orig_line = line
                             line = line.rstrip()
                             line = re.split(split_str,line)
-                            words = line
+                            words = last_3_word + line
                             while ' ' in words:
                                 words.remove(' ')
                             while '\t' in words:
                                 words.remove('\t')
                             while '' in words:
                                 words.remove('')
+
+                            last_3_word = words[-3:]
                             # print(words)
                             i = 0
 
                     # while end
                     if words[i] == '{':
                         orig_line = ""
-                        Refactor_func_count = Refactor_func_count + 1
+                        Find_All_func_count = Find_All_func_count + 1
                         find_func_count = find_func_count + 1
                         print(func_define)
                         # print("name:"+func_name)
                     
                     # write_file.write('\n'+func_define+'\n')
-                    break
+                    # break
                 
 
 
@@ -603,8 +640,8 @@ def function_count_all_functions(filename):
     print("===\n"+ filename + " func_num " + str(find_func_count) +"\n=====================================  " 
     + localtime +" 用时：%s s\n" % (func_end_time - func_start_time))
 
-    print ("总计"+str(Refactor_func_count)+"个函数")
-    return Refactor_func_count
+    print ("总计"+str(Find_All_func_count)+"个函数")
+    return find_func_count
 
 Help_text ="c_func_tools.py \n\
     -r <read file> \n\
