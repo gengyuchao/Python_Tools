@@ -227,7 +227,7 @@ def function_package_debug_functions(func_type,func_special_des,func_name,func_p
         func_str = func_str + "\treturn return_value; \n"
     func_str = func_str + "}\n\n"+\
     func_type+ " " +" ".join(func_special_des) + " "+func_name+"_fake"+func_param+\
-    "\n{\n"
+    "\n{"
 
     # print("param:" + func_param)
     return func_str
