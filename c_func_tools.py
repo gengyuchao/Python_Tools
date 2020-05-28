@@ -329,10 +329,18 @@ def function_Refactor_all_functions(filename):
             if words[i] =='*':
                 if  i-1>0 and words[i-1] =='/':
                     is_in_comment = True
+                    # print("Find comment")
+                    # print (words)
+                    if i-2 > 0 and words[i-2]=='*':
+                        is_in_comment = False
+                        # print("last comment Error")
+
             
             if is_in_comment == True :
                 if words[i] =='/' and i-1>0 and words[i-1] =='*':
                     is_in_comment = False
+                    print("End comment")
+                    print (orig_line)
             
             if is_in_comment == True:
                 continue
@@ -514,7 +522,9 @@ def function_count_all_functions(filename):
                 if  i-1>0 and words[i-1] =='/':
                     is_in_comment = True
                     # print("Find /* comment:"+line)
-                    
+                    if i-2 > 0 and words[i-2]=='*':
+                        is_in_comment = False
+                        # print("last comment Error")
                 # else :
                 #     print(str(i-1)+"  ")
                     # print (words)
@@ -623,6 +633,7 @@ def function_count_all_functions(filename):
                         orig_line = ""
                         Find_All_func_count = Find_All_func_count + 1
                         find_func_count = find_func_count + 1
+                        # print('{"%s",' % func_name + '\t%s},' % func_name  )
                         print(func_define)
                         # print("name:"+func_name)
                     
