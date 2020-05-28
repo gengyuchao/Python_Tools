@@ -8,6 +8,7 @@ import os
 import readline
 import shutil
 
+import datetime
 
 start_time = 0
 
@@ -44,7 +45,7 @@ C_type_list =["unsigned int","unsigned char",
 "void","int","bool","char","float","short","long","double"
 ]
 
-split_str = '([{ ()\n\s,=;*}])'
+split_str = '([{ ()\n\s,=;*/}])'
 
 def is_Bracket_matching(s):
     l = ['{','}','[',']','(',')']
@@ -300,6 +301,9 @@ def function_Refactor_all_functions(filename):
 
     Temp_head_list = C_descriptor_list + C_type_list +["#define"]
     Temp_head_list.remove("*")
+    
+    is_in_comment = False
+
     for line in fhand:
         orig_line = line
         line = line.rstrip()
@@ -313,7 +317,20 @@ def function_Refactor_all_functions(filename):
         while '' in words:
             words.remove('')
         
-        for i in range(0,len(words)-2):
+        for i in range(0,len(words)):
+
+
+            # 跳过注释
+            if words[i] =='*':
+                if  i-1>0 and words[i-1] =='/':
+                    is_in_comment = True
+            
+            if is_in_comment == True :
+                if words[i] =='/' and i-1>0 and words[i-1] =='*':
+                    is_in_comment = False
+            
+            if is_in_comment == True:
+                continue
 
             if has_add_debug_info == False and (words[i] in Temp_head_list):
                 has_add_debug_info = True
@@ -427,6 +444,7 @@ def function_Refactor_all_functions(filename):
 def function_count_all_functions(filename):
     "统计所有函数（新）"
     global Refactor_func_count
+    func_start_time = datetime.datetime.now()
     find_func_count = 0
     try:
         fhand = open (filename)
@@ -448,6 +466,7 @@ def function_count_all_functions(filename):
 
     Temp_head_list = C_descriptor_list + C_type_list +["#define"]
     Temp_head_list.remove("*")
+    is_in_comment = False
     for line in fhand:
         orig_line = line
         line = line.rstrip()
@@ -460,8 +479,30 @@ def function_count_all_functions(filename):
             words.remove(' ')
         while '' in words:
             words.remove('')
-        
-        for i in range(0,len(words)-2):
+
+        for i in range(0,len(words)):
+
+            # 跳过注释
+            if words[i] =='*':
+                # print("find * ")
+                if  i-1>0 and words[i-1] =='/':
+                    is_in_comment = True
+                    # print("Find /* comment:"+line)
+                    
+                # else :
+                #     print(str(i-1)+"  ")
+                    # print (words)
+            
+            if is_in_comment == True :
+                if words[i] =='/' and i-1>0 and words[i-1] =='*':
+                    is_in_comment = False
+                    # print("comment end:"+line)
+                # else :
+                #     print(str(i-1)+"  ")
+                #     print (words)
+            
+            if is_in_comment == True:
+                continue
 
             if i>0 and (words[i-1] in C_descriptor_list) :
                 func_define = words[i-1] +" "
@@ -495,6 +536,7 @@ def function_count_all_functions(filename):
                         if find_func_param_finish == True:
                             if i < len(words) and words[i] != '{':
                                 print("finish:"+func_param)
+                        # print("!"+words[i])
                         # 如果找到第一个 ‘(’ 将其写入 func_param, 如果写入过 '(' 则判断括号匹配
                         if (words[i].find("(") != -1 and func_param == "") or (func_param != "" and is_Bracket_matching(func_param)==False):
                             func_param = func_param + words[i] + " "
@@ -553,10 +595,13 @@ def function_count_all_functions(filename):
 
 
     fhand.close()# 
-    global start_time 
+
     localtime = time.asctime( time.localtime(time.time()) )
+
+    func_end_time = datetime.datetime.now()
+
     print("===\n"+ filename + " func_num " + str(find_func_count) +"\n=====================================  " 
-    + localtime +" 已用时："+time.asctime( time.gmtime(time.time() - start_time))+'\n')
+    + localtime +" 用时：%s s\n" % (func_end_time - func_start_time))
 
     print ("总计"+str(Refactor_func_count)+"个函数")
     return Refactor_func_count
@@ -574,6 +619,7 @@ Help_text ="c_func_tools.py \n\
 
 def function_execute_for_all_file_in_dir(exe_function,exe_dir):
     global start_time 
+    func_start_time = datetime.datetime.now()
     start_time = time.time()
     localtime = time.asctime( time.localtime(start_time) )
     print ("启动时间为 :", localtime)
@@ -585,9 +631,11 @@ def function_execute_for_all_file_in_dir(exe_function,exe_dir):
             (file_dir, file_type) = os.path.splitext(file_name)
             exe_function(os.path.join(path, file_name))
 
+    func_end_time = datetime.datetime.now()
     localtime = time.asctime( time.localtime(time.time()) )
+
     print ("结束时间为 :", localtime)
-    print ("总耗时："+time.asctime( time.gmtime(time.time() - start_time))+'\n')
+    print ("总耗时： %s \n" % ( func_end_time - func_start_time ) )
 
 
 def function_save_type_in_file(file_name):
