@@ -108,6 +108,10 @@ def Format_dbg_info_2_str(read_file_name):
 Help_menu = "\
 gyc.py \
 -h < Show this help menu > \
+-R < Record_Time > \
+-D < Start Do it> \
+-G < Get Func addr and Create a function dictionary > \
+-F < Formate The log File according the function dictionary > \
 "
 
 
@@ -137,16 +141,6 @@ def main(argv):
             execute_func = get_func_address
             Func_arg = arg
 
-        elif opt in ("-t", "--type_get"):
-            execute_func = function_search_all_type
-        elif opt in ("-c", "--create_file"):
-            execute_func = function_Refactor_all_functions
-        elif opt in ("-R", "--all_execu"):
-            dir_exe_func = True        
-        elif opt in ("-s", "--save_type_list"):
-            execute_func = function_save_type_in_file
-        elif opt in ("--clean"):
-            execute_func = function_clean_file
 
         if Flag_Do_it == True:
             Flag_Do_it = False

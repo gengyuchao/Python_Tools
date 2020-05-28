@@ -56,3 +56,18 @@ void * test_func_fake( void * test2 )
 }
 
 ```
+
+
+Analisys Tools 
+
+```
+-R < Record_Time >
+-D < Start Do it>
+-G < Get Func addr and Create a function dictionary >
+-F < Formate The log File according the function dictionary >
+
+```
+
+```
+python3 gyc.py -RG ./you_log_File.txt -D -RF ./you_log_File.txt -D
+```
