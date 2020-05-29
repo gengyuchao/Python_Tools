@@ -75,6 +75,7 @@ def Format_dbg_info_2_str(read_file_name):
     for line in fhand:
         orig_line = line
         if line.find('|')==-1:
+            print(orig_line)
             continue
         words = line.split('|')
         while ' ' in words:

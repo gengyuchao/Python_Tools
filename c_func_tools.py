@@ -143,7 +143,25 @@ def function_count_all_function(filename):
 
 type_list_save = C_type_list
 
-def function_search_all_type(filename):
+def read_next_line_2_list(line):
+
+    line = line.rstrip()
+    line_words = re.split(split_str,line)           # 分割单词，以列表返回
+    
+    while ' ' in line_words:
+        line_words.remove(' ')
+    while '' in line_words:
+        line_words.remove('')
+    while '(' in line_words:
+        line_words.remove('(')
+    while '*' in line_words:
+        line_words.remove('*')
+
+    return line_words
+
+
+
+def function_search_all_type_with_t(filename):
     if filename.find(".c")==-1 and filename.find(".h")==-1 :
         print(filename+" is not target file.")
         return
@@ -175,9 +193,93 @@ def function_search_all_type(filename):
 
     fhand.close()# 
 
+def function_search_all_type(filename):
+    if filename.find(".c")==-1 and filename.find(".h")==-1 :
+        print(filename+" is not target file.")
+        return
+    try:
+        fhand = open (filename)
+    except:
+        print ('打开文件出错:', filename)
+        exit ()
+    
+    type_found = None
+    for line in fhand:
+        words = read_next_line_2_list(line)
+
+        while len(words)<2:
+            # print(len(words))
+            line = fhand.readline()
+            if not line:
+                break
+            words = words + read_next_line_2_list(fhand.readline())
+        
+        for i in range(0,len(words)):
+            if i >= len(words) :
+                continue
+            if words[i] == 'typedef' :
+                if words[i+1] != 'struct' and words[i+1] != 'union' and words[i+1] != 'enum':
+                    if words[i+2] not in type_list_save:
+                        type_found = words[i+2]
+                        print('"'+ type_found +'",')
+                        type_list_save.insert(0,words[i+2])
+                else :
+                    if words[i+2] == '{':
+                        print("Find typedef with struct/union/enum{}")
+                        strcut_str=words[i]+words[i+1]+words[i+2]
+                        while is_Bracket_matching(strcut_str):
+                            strcut_str = strcut_str + " "+ words[i]
+                            i = i + 1
+                            if i >= len(words) :
+                                print (line)
+                                words = read_next_line_2_list(fhand.readline())
+                                while(len(words)<3):
+                                    words = words +read_next_line_2_list(fhand.readline())
+                                i = 0
+                        type_found = words[i+1]
+                        print(type_found)
+                        type_list_save.insert(0,type_found)
+                    else :
+                        if words[i+2] not in type_list_save:
+                            type_found = words[i+2]
+                            print('"'+ type_found +'",')
+                            type_list_save.insert(0,type_found)
+                if type_found == ';' or type_found =='{':
+                    print("\nError Here\n")
+                    print(words)
+            elif words[i] == 'struct' :
+                # This func is not sure
+                while(len(words)<i+4):
+                    words = words +read_next_line_2_list(fhand.readline())
+                if words[i+2] == '{':
+                    print("Find typedef with struct/union/enum{}")
+                    strcut_str=words[i]+words[i+1]+words[i+2]
+                    while is_Bracket_matching(strcut_str):
+                        strcut_str = strcut_str + " "+ words[i]
+                        i = i + 1
+                        if i >= len(words) :
+                            print (line)
+                            words = read_next_line_2_list(fhand.readline())
+                            while(len(words)<3):
+                                words = words +read_next_line_2_list(fhand.readline())
+                            i = 0
+                    type_found ="struct " +  words[i+1]
+                    print(type_found)
+                    type_list_save.insert(0,type_found)
+                else :
+                    print ("\nError\n")
+                    print (words)
+                    
+
+
+            
+
+    fhand.close()# 
+
 
 def function_package_debug_functions(func_type,func_special_des,func_name,func_param):
     param_in = func_param
+    #这里应该换成 list 处理 否则函数参数名中如果有 C type 可能会异常
     for C_type in C_type_list:
         if(param_in.find(C_type)!=-1):
             param_in = param_in.replace(C_type,"")
@@ -299,7 +401,7 @@ def function_Refactor_all_functions(filename):
     has_add_debug_info = False
     last_3_word = ['ab','bb','cb']
 
-    Temp_head_list = C_descriptor_list + C_type_list +["#define"]
+    Temp_head_list = C_descriptor_list + C_type_list +["#define","typedef","struct"]
     Temp_head_list.remove("*")
     
     is_in_comment = False
@@ -438,7 +540,7 @@ def function_Refactor_all_functions(filename):
 
                             last_3_word = words[-3:]
                             # print(words)
-                            i = 0
+                            i = 3
 
                     # while end
                     if words[i] == '{':
@@ -447,7 +549,11 @@ def function_Refactor_all_functions(filename):
                         Refactor_func_count = Refactor_func_count +1
                         print(func_define)
                         # print("name:"+func_name)
-                        write_file_header.write(func_type+" "+func_name+"_fake"+" "+func_param+";\n")
+                        special_des_str = ""
+                        if "*" in func_special_des :
+                            print("Find point* type ")
+                            special_des_str = "*"
+                        write_file_header.write(func_type+" "+ special_des_str + " "+func_name+"_fake"+" "+func_param+";\n")
                     
                     # write_file.write('\n'+func_define+'\n')
                     #break
@@ -491,7 +597,7 @@ def function_count_all_functions(filename):
     # 保存之前至少 3 个元素，防止因换行漏判
     last_3_word = ['ab','bb','cb']
 
-    Temp_head_list = C_descriptor_list + C_type_list +["#define"]
+    Temp_head_list = C_descriptor_list + C_type_list +["#define","typedef","struct"]
     Temp_head_list.remove("*")
     is_in_comment = False
     for line in fhand:
@@ -693,7 +799,7 @@ def function_save_type_in_file(file_name):
         print ('打开文件出错:', filename)
         exit ()
     
-    type_list_str = '"'+'","'.join(type_list_save)+'"'
+    type_list_str = '"'+'",\n"'.join(type_list_save)+'"'
     type_list_file.write(type_list_str)
 
 def function_clean_file(file_name):
@@ -720,7 +826,7 @@ def main(argv):
     outputfile = ''
     
     try:
-        opts, args = getopt.getopt(argv, "hsr:f:l:t:c:a", ["countlines=","rfile=","clean"])
+        opts, args = getopt.getopt(argv, "hsr:f:l:t:c:T:a", ["countlines=","rfile=","clean"])
     except getopt.GetoptError:
         print ('error-' + Help_text)
         return
@@ -739,6 +845,8 @@ def main(argv):
             execute_func = function_count_all_functions
         elif opt in ("-t", "--type_get"):
             execute_func = function_search_all_type
+        elif opt in ("-T", "--type_get_with_t"):
+            execute_func = function_search_all_type_with_t
         elif opt in ("-c", "--create_file"):
             execute_func = function_Refactor_all_functions
         elif opt in ("-a", "--all_execu"):
