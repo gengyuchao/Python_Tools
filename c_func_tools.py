@@ -12,6 +12,14 @@ import datetime
 
 start_time = 0
 
+Debug_Flag = False 
+
+def dbg_print(param):
+
+    if Debug_Flag == True :
+        print (param)
+
+
 def function_read_file(file_name):
     "读文件，并打印"
     print("Read File:")
@@ -225,13 +233,13 @@ def function_search_all_type(filename):
                         type_list_save.insert(0,words[i+2])
                 else :
                     if words[i+2] == '{':
-                        print("Find typedef with struct/union/enum{}")
+                        dbg_print("Find typedef with struct/union/enum{}")
                         strcut_str=words[i]+words[i+1]+words[i+2]
                         while is_Bracket_matching(strcut_str):
                             strcut_str = strcut_str + " "+ words[i]
                             i = i + 1
                             if i >= len(words) :
-                                print (line)
+                                dbg_print (line)
                                 words = read_next_line_2_list(fhand.readline())
                                 while(len(words)<3):
                                     words = words +read_next_line_2_list(fhand.readline())
@@ -252,13 +260,13 @@ def function_search_all_type(filename):
                 while(len(words)<i+4):
                     words = words +read_next_line_2_list(fhand.readline())
                 if words[i+2] == '{':
-                    print("Find typedef with struct/union/enum{}")
+                    dbg_print("Find typedef with struct/union/enum{}")
                     strcut_str=words[i]+words[i+1]+words[i+2]
                     while is_Bracket_matching(strcut_str):
                         strcut_str = strcut_str + " "+ words[i]
                         i = i + 1
                         if i >= len(words) :
-                            print (line)
+                            dbg_print (line)
                             words = read_next_line_2_list(fhand.readline())
                             while(len(words)<3):
                                 words = words +read_next_line_2_list(fhand.readline())
@@ -441,8 +449,8 @@ def function_Refactor_all_functions(filename):
             if is_in_comment == True :
                 if words[i] =='/' and i-1>0 and words[i-1] =='*':
                     is_in_comment = False
-                    print("End comment")
-                    print (orig_line)
+                    dbg_print("End comment")
+                    dbg_print (orig_line)
             
             if is_in_comment == True:
                 continue
